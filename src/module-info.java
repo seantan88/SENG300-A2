@@ -6,4 +6,5 @@
  *
  */
 module com.autovend.hardware.test_01rc2 {
+	requires junit;
 }

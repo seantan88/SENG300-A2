@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
 
 import java.util.Currency;
+import java.util.List;
 import java.util.Locale;
 
 import static org.junit.Assert.assertThrows;
@@ -22,6 +23,7 @@ import java.util.Arrays;
 
 
 import com.autovend.devices.BillStorage;
+import com.autovend.devices.DisabledException;
 import com.autovend.Bill;
 import com.autovend.devices.SimulationException;
 import com.autovend.devices.observers.BillStorageObserver;
@@ -68,6 +70,7 @@ public class BillStorageTest {
 	
 	@Test
 	public void testConstructor() {
+		System.out.println("Testing Constructor");
 		//TODO: REGISTER L3 TO A BILLSTORAGE WITH CAPACITY OF 0 THAT IS LOCAL TO THIS METHOD
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
@@ -81,11 +84,12 @@ public class BillStorageTest {
 		l1.setDevice(null);
 		l2.setDevice(null);
 		l3.setDevice(null);
+		System.out.println();
 	}
 	
 	@Test
 	public void testGetCapacity() {
-		
+		System.out.println("Testing getCapacity");
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
 		assertEquals(null, l3.getDevice());
@@ -98,12 +102,40 @@ public class BillStorageTest {
 		l1.setDevice(null);
 		l2.setDevice(null);
 		l3.setDevice(null);
+		System.out.println();
 	}
+	
+	@Test
+	public void testBillCount() throws SimulationException, OverloadException {
+		System.out.println("Testing getBillCount");
+		assertEquals(storage, l1.getDevice());
+		assertEquals(storage, l2.getDevice());
+		assertEquals(null, l3.getDevice());
+		
+		storage.unload();
+		assertEquals(storage.getBillCount(), 0);
+		
+		Bill[] bills = new Bill[storage.getCapacity() / 2 ];
+		for (int i = 0; i < bills.length; ++i) {
+			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
+		}
+		
+		Bill[] loadableBills = bills;
+		
+		storage.load(loadableBills);
+		assertEquals(storage.getBillCount(), storage.getCapacity() / 2);
+		
+		l1.setDevice(null);
+		l2.setDevice(null);
+		l3.setDevice(null);
+		System.out.println();
+	}
+	
 	
 	
 	@Test
 	public void testLoad() throws SimulationException, OverloadException {
-		
+		System.out.println("Testing load");
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
 		assertEquals(null, l3.getDevice());
@@ -150,13 +182,26 @@ public class BillStorageTest {
 		l3.setDevice(null);
 		
 		
-		bills = new Bill[storage.getCapacity() - storage.getBillCount()];
+		int originalCount = storage.getBillCount();
+		
+		bills = new Bill[storage.getCapacity() - originalCount];
 		for (int i = 0 ; i < bills.length; ++i) {
 			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
 		}
 		Bill[] valid_bills = bills;
 		
 		storage.load(valid_bills);
+		List<Bill> unloaded_bills = storage.unload();
+		
+		/*
+		Bill[] unloadedArr = new Bill[unloaded_bills.size()];
+		for (int i = 0; i < unloadedArr.length; ++i) {
+			unloadedArr[i] = unloaded_bills.get(i);
+		}*/
+		
+		for (int i = originalCount; i < storage.getCapacity(); ++i) {
+			assertEquals(valid_bills[i], unloaded_bills.get(i));
+		}
 		
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
@@ -165,15 +210,95 @@ public class BillStorageTest {
 		l1.setDevice(null);
 		l2.setDevice(null);
 		l3.setDevice(null);
-		
-		
-		
-		
-		
-		
-		
-		
+		System.out.println();
 	}
+	
+	@Test
+	public void testUnload() {
+		System.out.println("Testing Unload");
+		assertEquals(storage, l1.getDevice());
+		assertEquals(storage, l2.getDevice());
+		assertEquals(null, l3.getDevice());
+		
+
+		
+		List<Bill> empty = storage.unload();
+		assertEquals(storage.getBillCount(), 0);
+		
+		Bill[] emptyArr = new Bill[empty.size()];
+		
+		for (int i = 0; i< emptyArr.length; ++i) {
+			emptyArr[i] = empty.get(i);
+		}
+		
+		assertArrayEquals(emptyArr, new Bill[storage.getCapacity()]);
+		
+		
+		l1.setDevice(null);
+		l2.setDevice(null);
+		l3.setDevice(null);
+		System.out.println();
+	
+	}
+	
+	@Test
+	public void testAccept() throws SimulationException, OverloadException {
+		System.out.println("Testing accept");
+		assertEquals(storage, l1.getDevice());
+		assertEquals(storage, l2.getDevice());
+		assertEquals(null, l3.getDevice());
+		
+		Bill goodBill = new Bill(5, Currency.getInstance(Locale.CANADA));
+		Bill badBill = null;
+		
+		storage.disable();
+		assertThrows(DisabledException.class, () -> storage.accept(goodBill));
+		
+		storage.enable();
+		
+		assertThrows(SimulationException.class, () -> storage.accept(badBill));
+		
+		Bill[] bills = new Bill[storage.getCapacity()];
+		for (int i = 0; i < bills.length; ++i) {
+			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
+		}
+		
+		Bill[] loadableBills = bills;
+		storage.unload();
+		storage.load(loadableBills);
+		
+		assertThrows(OverloadException.class, () -> storage.accept(goodBill));
+		
+		
+		storage.unload();
+		
+		storage.accept(goodBill);
+		
+		
+		l1.setDevice(null);
+		l2.setDevice(null);
+		l3.setDevice(null);
+		
+		System.out.println();
+		
+	
+	}
+	
+	@Test
+	public void testHasSpace() throws SimulationException, OverloadException {
+		storage.unload();
+		assertTrue(storage.hasSpace());
+		
+		Bill[] bills = new Bill[storage.getCapacity()];
+		for (int i = 0; i < bills.length; ++i) {
+			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
+		}
+			
+		Bill[] loadableBills = bills;
+		storage.load(loadableBills);
+		assertFalse(storage.hasSpace());
+	}
+
 	
 
 }

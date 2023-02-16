@@ -11,6 +11,7 @@ import java.util.Locale;
 
 import static org.junit.Assert.assertThrows;
 
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -267,12 +268,38 @@ public class BillStorageTest {
 		storage.unload();
 		storage.load(loadableBills);
 		
+
+		
 		assertThrows(OverloadException.class, () -> storage.accept(goodBill));
 		
 		
 		storage.unload();
-		
 		storage.accept(goodBill);
+		storage.unload();
+		
+		
+		boolean found = true;
+		
+		
+		bills = new Bill[storage.getCapacity() - 1];
+		for (int i = 0; i < bills.length; ++i) {
+			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
+		}
+		
+		Bill[] loadableBillsOneLess = bills;
+		storage.load(loadableBillsOneLess);
+		
+		
+		try {
+			storage.accept(goodBill);
+		}
+		catch (IndexOutOfBoundsException e) {
+			found = false;
+		}
+		
+		assertTrue(found);
+		storage.unload();
+		
 		
 		
 		l1.setDevice(null);

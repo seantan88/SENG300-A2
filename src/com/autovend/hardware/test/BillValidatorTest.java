@@ -27,6 +27,7 @@ public class BillValidatorTest {
 	
 	@Before
 	public void setup() {
+		// sets up valid bills, and make a test bill validator
 		cad = Currency.getInstance(Locale.CANADA);
 		five = new Bill(5, cad);
 		ten = new Bill(10, cad);
@@ -35,12 +36,15 @@ public class BillValidatorTest {
 		onehundred = new Bill(100, cad);
 		int[] demonination = {5,10,25,50,100};
 		validator = new BillValidator(cad, demonination);
+		// makes 5 listeners for the validator
 		listener1 = new BillValidatorObserverTest("listener1");
 		listener2 = new BillValidatorObserverTest("listener2");
 		listener3 = new BillValidatorObserverTest("listener3");
 		listener4 = new BillValidatorObserverTest("listener4");
 		listener5 = new BillValidatorObserverTest("listener5");
 		
+		
+		//initializes listeners
 		listener1.device = null;
 		listener1.money = null;
 		listener1.value = 0;
@@ -64,6 +68,7 @@ public class BillValidatorTest {
 	}
 	@After
 	public void teardown() {
+		//nullify bills and listeners
 		five = null;
 		ten = null;
 		twenty = null;
@@ -79,6 +84,7 @@ public class BillValidatorTest {
 	@Test
 	public void plainvalidator() {
 		try {
+		//test devices
 		assertEquals(validator, listener1.device);
 		assertEquals(null, listener2.device);
 		assertEquals(null, listener3.device);
@@ -102,6 +108,7 @@ public class BillValidatorTest {
 		listener4.money = null;
 		listener5.money = null;
 		
+		//register validators 2-5
 		validator.deregister(listener1);
 		validator.register(listener2);
 		validator.register(listener3);
@@ -113,6 +120,7 @@ public class BillValidatorTest {
 			found = validator.accept(five);
 		}
 		catch (Exception e){
+			//sink and source are never initializable without making a self checkout, because of course that is the case
 			System.out.println("FAILURE: Sink and Source are not connected.");
 			try {
 				validator.connect(null, null);
@@ -124,6 +132,7 @@ public class BillValidatorTest {
 	}
 	@Test
 	public void propersetup() {
+		//machinemake() makes a self checkout with a proper bill validator
 		machinemake();
 		assertEquals(validator, listener1.device);
 		assertEquals(null, listener2.device);
@@ -154,6 +163,7 @@ public class BillValidatorTest {
 		checkout.billValidator.register(listener5);
 		checkout.billValidator.disable();
 		checkout.billValidator.enable();
+		//goodness repeat code...
 		boolean found = false;
 		while(!found)
 		found = checkout.billValidator.accept(onehundred);
@@ -187,6 +197,7 @@ public class BillValidatorTest {
 		listener4.money = null;
 		listener5.money = null;
 		
+		//do some disable checks
 		checkout.billValidator.disable();
 		found = false;
 
@@ -220,7 +231,7 @@ public class BillValidatorTest {
 		assertEquals(null, listener3.device);
 		assertEquals(null, listener4.device);
 		assertEquals(null, listener5.device);
-		
+		// accept every bill but with different listeners
 		checkout.billValidator.register(listener1);
 		checkout.billValidator.deregister(listener2);
 		found = false;
@@ -288,6 +299,7 @@ public class BillValidatorTest {
 		checkout.billValidator.enable();
 		boolean found = false;
 		while(!found)
+			// fail because bill is null
 		found = checkout.billValidator.accept(null);
 		}
 		catch (Exception e) {
@@ -334,6 +346,7 @@ public class BillValidatorTest {
 		checkout.billValidator.disable();
 		boolean found = false;
 		while(!found)
+			// just make sure the validator is off
 		found = checkout.billValidator.accept(five);
 		}
 		catch (Exception e) {
@@ -379,12 +392,14 @@ public class BillValidatorTest {
 		checkout.billValidator.register(listener2);
 		checkout.billValidator.disable();
 		checkout.billValidator.enable();
-		Bill faker = new Bill(100, Currency.getInstance(Locale.JAPAN));
+		Bill faker = new Bill(100, Currency.getInstance(Locale.JAPAN)); // ...do 100 yen bills even exist?
 		boolean found = false;
 		while(!found)
 		found = checkout.billValidator.accept(faker);
 		}
 		catch (Exception e) {
+			//literally how, nothing is full
+			//a bug it is, i say we break the coder's arms
 			System.out.println("FAILURE: Overload.");
 			fail();
 		}
@@ -404,10 +419,12 @@ public class BillValidatorTest {
 		found = checkout.billValidator.accept(faker);
 		}
 		catch (Exception e) {
+			//because of course the invalid bill checker is buggy
 			System.out.println("FAILURE: Overload.");
 			fail();
 		}
 	}
+	// next 5 tests create incomplete bill validators
 	@Test
 	public void badvalidator() {
 		try {
@@ -426,6 +443,7 @@ public class BillValidatorTest {
 			System.out.println("FAILURE: Bad setup.");
 		}
 	}
+	// 3-5 make ones with bad denominations
 	@Test
 	public void badvalidator3() {
 		try {
@@ -465,7 +483,7 @@ public class BillValidatorTest {
 		checkout.billValidator.disable();
 		checkout.billValidator.enable();
 		boolean found = false;
-		
+		//okay, but the capacity should be 1000
 		int n = 999;
 		try {
 		while (n > 0){
@@ -473,9 +491,11 @@ public class BillValidatorTest {
 			n--;
 		}
 		while(!found)
+			//supposed to try and force another bill
 		found = checkout.billValidator.accept(five);
 		}
 		catch (Exception e) {
+			//...except it does not work. yay
 			System.out.println("FAILURE: Not enough space.");
 			fail();
 		}
@@ -492,15 +512,18 @@ public class BillValidatorTest {
 		int n = 999;
 		try {
 		while (n > 0){
+			// attempt to shove bills.
 			found = checkout.billValidator.accept(five);
 			n--;
 		}
 		}
 		catch (Exception e) {
+			//of course it has to have random failures...
 			System.out.println("FAILURE: Random failure.");
 		}
 	}
 	public void machinemake() {
+		//sets up the self checkout because of course the channels needed are private...
 		int[] denomination = {5,10,20,50,100};
 		BigDecimal[] koin = new BigDecimal[7];
 		koin[0] = new BigDecimal("0.01");

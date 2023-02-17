@@ -1,3 +1,13 @@
+/*
+ * Desmond O'Brien - 30064340
+ * Sean Tan - 30094560
+ * Victor Campos - 30106934
+ * Imran Haji - 30141571
+ */
+
+
+
+
 package com.autovend.hardware.test_01rc2;
 
 import static org.junit.Assert.assertEquals;
@@ -30,14 +40,19 @@ import com.autovend.devices.SimulationException;
 import com.autovend.devices.observers.BillStorageObserver;
 import com.autovend.devices.OverloadException;
 
+/*
+ * Tester class for BillStorage class
+ */
 public class BillStorageTest {
+	
+	// member BillStorage, capacity for testing, and observers 
 	public BillStorage storage;
-	public int testCapacity = 100;
+	public final int testCapacity = 100;
 	public BillStorageTestObserver l1, l2, l3;
 	
 
 	
-
+	// Setup function
 	@Before
 	public void setUp() throws Exception {
 		storage = new BillStorage(testCapacity);
@@ -45,20 +60,16 @@ public class BillStorageTest {
 		l2 = new BillStorageTestObserver("Listener2");
 		l3 = new BillStorageTestObserver("Listener3");
 
-
+		// Register L1 and L2 to BillStorage object
 		storage.register(l1);
 		storage.register(l2);
 		
-		
+		// Enable and disable BillStorage for simulation
 		storage.disable();
 		storage.enable();
-		
 	}
 
-	
-	
-	
-	
+	// Function to clear up references when testing is done
 	@After
 	public void tearDown() throws Exception {
 		storage = null;
@@ -68,36 +79,48 @@ public class BillStorageTest {
 	}
 
 	
-	
+	/*
+	 * Function to test the BillStorage constructor
+	 * 
+	 */
 	@Test
 	public void testConstructor() {
+		// message for output formatting
 		System.out.println("Testing Constructor");
-		//TODO: REGISTER L3 TO A BILLSTORAGE WITH CAPACITY OF 0 THAT IS LOCAL TO THIS METHOD
+		// Make sure observers are correct
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
 		assertEquals(null, l3.getDevice());
 		
-		l1.setDevice(null);
-		l2.setDevice(null);
-		l3.setDevice(null);
+		// assure that a SimulationException is thrown if a BillStorage <= 0 is instantiated
 		assertThrows(SimulationException.class, () -> new BillStorage(0));
+		// assure that a new BillStorage with a valid capacity is instantiated correctly
 		assertTrue(new BillStorage(testCapacity) instanceof BillStorage);
+		
+		// Clear up listener's devices and print line for output formatting
 		l1.setDevice(null);
 		l2.setDevice(null);
 		l3.setDevice(null);
 		System.out.println();
 	}
 	
+	
+	/*
+	 * 
+	 * Function to test the getCapacity method
+	 * 
+	 */
 	@Test
 	public void testGetCapacity() {
+		// formatting
 		System.out.println("Testing getCapacity");
+		
+		// checking observers
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
 		assertEquals(null, l3.getDevice());
 		
-		l1.setDevice(null);
-		l2.setDevice(null);
-		l3.setDevice(null);
+		// assure that capacity of member variable is correctly returneds
 		assertEquals(storage.getCapacity(), testCapacity);
 		
 		l1.setDevice(null);
@@ -106,23 +129,37 @@ public class BillStorageTest {
 		System.out.println();
 	}
 	
+	
+	/*
+	 * 
+	 * Function to test billCount method
+	 * 
+	 */
 	@Test
 	public void testBillCount() throws SimulationException, OverloadException {
 		System.out.println("Testing getBillCount");
+		
+		// check observers
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
 		assertEquals(null, l3.getDevice());
 		
+		// make sure storage is empty
 		storage.unload();
+		
+		// ensure that 0 is returned if storage is empty
 		assertEquals(storage.getBillCount(), 0);
 		
+		// create am array of bills half the length of max capacity
 		Bill[] bills = new Bill[storage.getCapacity() / 2 ];
 		for (int i = 0; i < bills.length; ++i) {
 			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
 		}
 		
+		// immutable reference of same array for testing
 		Bill[] loadableBills = bills;
 		
+		// load the bills and assure length is equal to half max capacity
 		storage.load(loadableBills);
 		assertEquals(storage.getBillCount(), storage.getCapacity() / 2);
 		
@@ -133,66 +170,85 @@ public class BillStorageTest {
 	}
 	
 	
-	
+	/*
+	 * Function to test load method
+	 * 
+	 */
 	@Test
 	public void testLoad() throws SimulationException, OverloadException {
 		System.out.println("Testing load");
+		
+		// check observers
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
 		assertEquals(null, l3.getDevice());
 		
+		//unload all bills
+		storage.unload();
 		
-		// try to load 'null' bills
+		
+		// assure that an exception is thrown if we try to load no bills
 		assertThrows(SimulationException.class, () -> storage.load(null));
 		
-		assertEquals(storage, l1.getDevice());
-		assertEquals(storage, l2.getDevice());
-		assertEquals(null, l3.getDevice());
+
 		
-		// try to load a number of bills greater than capacity
+		// Create an array of bills greater than max capacity
 		Bill[] bills = new Bill[storage.getBillCount() + (storage.getCapacity() - storage.getBillCount()) + 1];
 		for (int i = 0; i < bills.length; ++i) {
 			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
 		}
 		
+		
+		// set reference to immutable as reference to array above
 		Bill[] greater_than_capacity = bills;
 		
+		// Assure that an exception is thrown if we try to load more bills than max capacity
 		assertThrows(OverloadException.class, () -> storage.load(greater_than_capacity));
 		
-		assertEquals(storage, l1.getDevice());
-		assertEquals(storage, l2.getDevice());
-		assertEquals(null, l3.getDevice());
-		
-		// try to load a number of bill where one bill is unacceptable (null)
+	
+		// create another array of bills, this time excatly enough bills to fill rest of storage
 		bills[bills.length / 2] = null;
 		bills = new Bill[storage.getCapacity() - storage.getBillCount()];
 		for (int i = 0; i < bills.length; ++i) {
 			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
 		}
 		
+		// set the middle bill to null
 		bills[bills.length / 2] = null;
+		
+		//array reference for testing
 		Bill[] bills_with_one_null = bills;
+		// assure that an exception is thrown if a single bill is null / unrecognizable
 		assertThrows(SimulationException.class, () -> storage.load(bills_with_one_null));
 		
-		assertEquals(storage, l1.getDevice());
-		assertEquals(storage, l2.getDevice());
-		assertEquals(null, l3.getDevice());
 		
-		l1.setDevice(null);
-		l2.setDevice(null);
-		l3.setDevice(null);
-		
-		
-		int originalCount = storage.getBillCount();
-		
-		bills = new Bill[storage.getCapacity() - originalCount];
-		for (int i = 0 ; i < bills.length; ++i) {
+		bills = new Bill[storage.getCapacity() / 2];
+		for (int i = 0; i < bills.length; ++i) {
 			bills[i] = new Bill(5, Currency.getInstance(Locale.CANADA));
 		}
-		Bill[] valid_bills = bills;
+		Bill[] firstHalf = bills;
 		
-		storage.load(valid_bills);
+		bills = new Bill[storage.getCapacity() / 2];
+		for (int i = 0; i < bills.length; ++i) {
+			bills[i] = new Bill(10, Currency.getInstance(Locale.CANADA));
+		}
+		Bill[] secondHalf = bills;
+		
+		
+		List<Bill> expectedStorage = Arrays.asList(firstHalf);
+		for (Bill bill : secondHalf) {
+			expectedStorage.add(bill);
+		}
+		
+		storage.unload();
+		storage.load(firstHalf);
+		storage.load(secondHalf);
+		
 		List<Bill> unloaded_bills = storage.unload();
+		
+		for (int i = 0; i < unloaded_bills.size(); ++i) {
+			assertEquals(expectedStorage.get(i), unloaded_bills.get(i));
+		}
 		
 		/*
 		Bill[] unloadedArr = new Bill[unloaded_bills.size()];
@@ -200,9 +256,9 @@ public class BillStorageTest {
 			unloadedArr[i] = unloaded_bills.get(i);
 		}*/
 		
-		for (int i = originalCount; i < storage.getCapacity(); ++i) {
-			assertEquals(valid_bills[i], unloaded_bills.get(i));
-		}
+		//for (int i = originalCount; i < storage.getCapacity(); ++i) {
+	//		assertEquals(valid_bills[i], unloaded_bills.get(i));
+	//	}
 		
 		assertEquals(storage, l1.getDevice());
 		assertEquals(storage, l2.getDevice());
